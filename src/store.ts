@@ -1,7 +1,9 @@
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import type { Person, Conversation, Message } from "./types.ts";
+import type { Person, Conversation, Message, Attachment } from "./types.ts";
+import { AttachmentFiles } from "./attachments.ts";
+import { LocalS3Storage } from "./media-storage.ts";
 
 export const people: Person[] = [
   {
@@ -32,7 +34,13 @@ export const people: Person[] = [
 
 export class Store {
   readonly db: DatabaseSync;
+  readonly files: AttachmentFiles;
+  readonly objects: LocalS3Storage;
+  readonly temporaryDirectory: string;
   constructor(path: string) {
+    this.files = new AttachmentFiles(dirname(path) + "/uploads");
+    this.objects = new LocalS3Storage(dirname(path) + "/objects");
+    this.temporaryDirectory = dirname(path) + "/.upload-tmp";
     if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
     this.db = new DatabaseSync(path);
     this.db.exec(`PRAGMA journal_mode=WAL;
@@ -78,14 +86,21 @@ export class Store {
     );
   }
   reset(): void {
+    const attachments = this.all<Attachment>("attachment");
+    const signingSecret = this.get<string>("meta", "media-signing-secret");
     this.transaction(() => {
       this.db.exec("DELETE FROM records");
       this.put("meta", "initialized", true);
+      if (signingSecret) this.put("meta", "media-signing-secret", signingSecret);
       this.put<Conversation>("conversation", "support-thread", {
         id: "support-thread",
         participantIds: ["customer", "support"],
         createdAt: new Date().toISOString(),
       });
     });
+    for (const attachment of attachments) {
+      if (attachment.storage) this.objects.delete(attachment.storage.key);
+      else this.files.remove(attachment.id);
+    }
   }
 }

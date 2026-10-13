@@ -106,22 +106,31 @@
             aria-label="Messages"
           ></div>
           <form id="composer">
-            <label class="sr-only" for="message-input" data-t="write"
-              >Write a message</label
-            ><textarea
-              id="message-input"
-              rows="2"
-              maxlength="4000"
-              placeholder="Write a message…"
-              required
-            ></textarea>
+            <div id="media-preview" class="media-preview" hidden>
+              <img id="preview-image" alt="Selected image" hidden />
+              <video id="preview-video" controls playsinline preload="metadata" hidden></video>
+              <span id="media-details"></span>
+              <button id="remove-media" type="button" data-t="removeMedia">Remove attachment</button>
+            </div>
+            <label class="sr-only" for="message-input" data-t="write">Write a message</label>
+            <textarea id="message-input" rows="2" maxlength="4000" placeholder="Write a message…"></textarea>
+            <p class="description-hint" data-t="describeHint">Describe where it leaks, when it started, and whether it is continuous.</p>
+            <input id="image-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden />
+            <input id="video-input" type="file" accept=".mp4,.webm,video/mp4,video/webm" hidden />
             <div class="compose-actions">
-              <span data-t="textOnly"
-                >Text messages · Enter to send · Shift + Enter for a new
-                line</span
-              ><button id="send" type="submit" class="primary" data-t="send">
-                Send message
-              </button>
+              <div class="attachment-picker">
+                <button id="add-media" type="button" class="attachment-plus" aria-label="Add attachment" aria-expanded="false" aria-controls="attachment-menu">＋</button>
+                <div id="attachment-menu" class="attachment-menu" hidden>
+                  <button id="choose-image" type="button" data-t="addImage">Add image</button>
+                  <button id="choose-video" type="button" data-t="addVideo">Add video</button>
+                </div>
+              </div>
+              <span data-t="textOnly">Enter to send · Shift + Enter for a new line</span>
+              <button id="send" type="submit" class="primary" data-t="send">Send message</button>
+            </div>
+            <div id="upload-status" class="upload-status" role="status" hidden>
+              <progress id="upload-progress" max="100" value="0" aria-label="Upload progress"></progress>
+              <span id="upload-label"></span>
             </div>
             <p id="send-error" class="error" role="alert" hidden></p>
           </form>
@@ -164,6 +173,10 @@
             Reset demo
           </button>
         </div>
+      </dialog>
+      <dialog id="image-dialog" class="image-dialog" aria-label="Image viewer">
+        <button id="close-image" type="button" data-t="closeImage">Close image</button>
+        <img id="full-image" alt="Message image" />
       </dialog>
     </div>
     <script type="module" src="/app.js"></script>
